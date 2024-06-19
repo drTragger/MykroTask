@@ -110,3 +110,33 @@ func (uc *UserController) GetUserById(w http.ResponseWriter, r *http.Request) {
 		Data:    user,
 	})
 }
+
+func (uc *UserController) Login(w http.ResponseWriter, r *http.Request) {
+	var loginDTO models.LoginDTO
+	err := json.NewDecoder(r.Body).Decode(&loginDTO)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Failed to decode body data",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	token, err := uc.userService.LoginUser(loginDTO.Email, loginDTO.Password)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusUnauthorized, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Invalid email or password",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
+		Status:  true,
+		Message: "Login successful",
+		Data:    token,
+	})
+	return
+}

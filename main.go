@@ -25,7 +25,7 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 
 	// Initialize services
-	userService := services.NewUserService(userRepo)
+	userService := services.NewUserService(userRepo, []byte(cfg.JWTSecret))
 
 	// Initialize controllers
 	userController := controllers.NewUserController(userService)
