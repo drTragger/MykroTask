@@ -15,6 +15,7 @@ type ProjectService interface {
 	GetProjectById(projectId uuid.UUID) (*models.Project, error)
 	UpdateProject(project *models.Project) (*models.Project, error)
 	CheckUserPermission(projectId, userId uuid.UUID) (bool, error)
+	DeleteProject(projectId uuid.UUID) error
 }
 
 type projectService struct {
@@ -50,4 +51,8 @@ func (s *projectService) CheckUserPermission(projectId, userId uuid.UUID) (bool,
 	}
 
 	return project.OwnerId == userId, nil
+}
+
+func (s *projectService) DeleteProject(projectId uuid.UUID) error {
+	return s.projectRepository.DeleteProject(projectId)
 }

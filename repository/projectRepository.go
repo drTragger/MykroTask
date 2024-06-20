@@ -11,6 +11,7 @@ type ProjectRepository interface {
 	GetProjectsForUser(userId uuid.UUID, page uint, perPage uint) ([]*models.Project, error)
 	GetProjectById(projectId uuid.UUID) (*models.Project, error)
 	UpdateProject(project *models.Project) (*models.Project, error)
+	DeleteProject(projectId uuid.UUID) error
 }
 
 type projectRepository struct {
@@ -77,4 +78,13 @@ func (r *projectRepository) UpdateProject(project *models.Project) (*models.Proj
 		return nil, err
 	}
 	return &p, nil
+}
+
+func (r *projectRepository) DeleteProject(projectId uuid.UUID) error {
+	query := `DELETE FROM projects WHERE id = $1`
+	_, err := r.db.Exec(query, projectId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

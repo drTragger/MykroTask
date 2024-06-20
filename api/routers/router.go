@@ -4,6 +4,7 @@ import (
 	"github.com/drTragger/MykroTask/api/controllers"
 	"github.com/drTragger/MykroTask/middleware"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 func SetupRouter(
@@ -16,15 +17,16 @@ func SetupRouter(
 	api.Use(middleware.JWTMiddleware(jwtKey))
 
 	// User Management
-	router.HandleFunc("/api/register", userController.RegisterUser).Methods("POST")
-	router.HandleFunc("/api/login", userController.Login).Methods("POST")
-	router.HandleFunc("/api/users/{id}", userController.GetUserById).Methods("GET")
+	router.HandleFunc("/api/register", userController.RegisterUser).Methods(http.MethodPost)
+	router.HandleFunc("/api/login", userController.Login).Methods(http.MethodPost)
+	router.HandleFunc("/api/users/{id}", userController.GetUserById).Methods(http.MethodGet)
 
 	// Project Management
-	api.HandleFunc("/projects", projectController.CreateProject).Methods("POST")
-	api.HandleFunc("/projects", projectController.GetProjectsForUser).Methods("GET")
-	api.HandleFunc("/projects/{id}", projectController.GetProjectById).Methods("GET")
-	api.HandleFunc("/projects/{id}", projectController.UpdateProject).Methods("PUT")
+	api.HandleFunc("/projects", projectController.CreateProject).Methods(http.MethodPost)
+	api.HandleFunc("/projects", projectController.GetProjectsForUser).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{id}", projectController.GetProjectById).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{id}", projectController.UpdateProject).Methods(http.MethodPut)
+	api.HandleFunc("/projects/{id}", projectController.DeleteProject).Methods(http.MethodDelete)
 
 	return router
 }

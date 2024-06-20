@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"database/sql"
+	"errors"
 	"github.com/drTragger/MykroTask/middleware"
 	"github.com/drTragger/MykroTask/models"
 	"github.com/drTragger/MykroTask/services"
@@ -141,6 +143,13 @@ func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Reque
 
 	project, err := pc.projectService.GetProjectById(projectId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			utils.WriteJSONResponse(w, http.StatusNotFound, &utils.ErrorResponse{
+				Status:  false,
+				Message: "Project not found.",
+			})
+			return
+		}
 		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
 			Status:  false,
 			Message: "Failed to get project.",
@@ -235,5 +244,60 @@ func (pc *ProjectController) UpdateProject(w http.ResponseWriter, r *http.Reques
 		Status:  true,
 		Message: "Project updated successfully.",
 		Data:    project,
+	})
+}
+
+func (pc *ProjectController) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr, ok := vars["id"]
+	if !ok {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Missing id parameter.",
+		})
+		return
+	}
+
+	projectId, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Invalid id parameter.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
+	permission, err := pc.projectService.CheckUserPermission(projectId, userId)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Permission check failed.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+	if !permission {
+		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
+			Status:  false,
+			Message: "You are not the owner of this project.",
+		})
+		return
+	}
+
+	err = pc.projectService.DeleteProject(projectId)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Failed to delete project.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
+		Status:  true,
+		Message: "Project deleted successfully.",
 	})
 }
