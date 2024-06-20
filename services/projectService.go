@@ -11,6 +11,7 @@ const ProjectsPerPage uint = 10
 type ProjectService interface {
 	CreateProject(project *models.Project) (*models.Project, error)
 	GetProjectsForUser(userId uuid.UUID, page uint) ([]*models.Project, error)
+	GetProjectById(projectId uuid.UUID) (*models.Project, error)
 }
 
 type projectService struct {
@@ -28,4 +29,8 @@ func (s *projectService) CreateProject(project *models.Project) (*models.Project
 
 func (s *projectService) GetProjectsForUser(userId uuid.UUID, page uint) ([]*models.Project, error) {
 	return s.projectRepository.GetProjectsForUser(userId, page, ProjectsPerPage)
+}
+
+func (s *projectService) GetProjectById(projectId uuid.UUID) (*models.Project, error) {
+	return s.projectRepository.GetProjectById(projectId)
 }

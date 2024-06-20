@@ -6,6 +6,7 @@ import (
 	"github.com/drTragger/MykroTask/services"
 	"github.com/drTragger/MykroTask/utils"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
@@ -58,6 +59,7 @@ func (pc *ProjectController) CreateProject(w http.ResponseWriter, r *http.Reques
 			Status:  false,
 			Message: "User not found.",
 		})
+		return
 	}
 
 	project, err = pc.projectService.CreateProject(project)
@@ -67,6 +69,7 @@ func (pc *ProjectController) CreateProject(w http.ResponseWriter, r *http.Reques
 			Message: "Failed to create project.",
 			Errors:  err.Error(),
 		})
+		return
 	}
 
 	utils.WriteJSONResponse(w, http.StatusCreated, &utils.SuccessResponse{
@@ -111,5 +114,52 @@ func (pc *ProjectController) GetProjectsForUser(w http.ResponseWriter, r *http.R
 		Status:  true,
 		Message: "Projects retrieved successfully.",
 		Data:    projects,
+	})
+}
+
+func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr, ok := vars["id"]
+	if !ok {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Missing id parameter",
+		})
+		return
+	}
+
+	projectId, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Invalid id parameter",
+		})
+		return
+	}
+
+	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
+
+	project, err := pc.projectService.GetProjectById(projectId)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Failed to get project.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	if project.OwnerId != userId {
+		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
+			Status:  false,
+			Message: "You are not the owner of this project.",
+		})
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
+		Status:  true,
+		Message: "Project retrieved successfully.",
+		Data:    project,
 	})
 }
