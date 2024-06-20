@@ -44,3 +44,15 @@ func WriteJSONResponse(w http.ResponseWriter, statusCode int, response JSONRespo
 	json.NewEncoder(w).Encode(response)
 	return
 }
+
+func UnmarshalRequest(r *http.Request, v interface{}) *ErrorResponse {
+	err := json.NewDecoder(r.Body).Decode(&v)
+	if err != nil {
+		return &ErrorResponse{
+			Status:  false,
+			Message: "Failed to decode body data",
+			Errors:  err.Error(),
+		}
+	}
+	return nil
+}

@@ -3,7 +3,7 @@ package services
 import (
 	"errors"
 	"github.com/drTragger/MykroTask/models"
-	"github.com/drTragger/MykroTask/repositories"
+	"github.com/drTragger/MykroTask/repository"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

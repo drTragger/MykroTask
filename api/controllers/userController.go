@@ -33,6 +33,17 @@ func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate the request data
+	err = utils.ValidateStruct(userDTO)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusUnprocessableEntity, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Validation failed",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
 	existingUser, err := uc.userService.GetUserByEmail(userDTO.Email)
 	if err == nil && existingUser != nil {
 		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
@@ -118,6 +129,17 @@ func (uc *UserController) Login(w http.ResponseWriter, r *http.Request) {
 		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
 			Status:  false,
 			Message: "Failed to decode body data",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	// Validate the request data
+	err = utils.ValidateStruct(loginDTO)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Validation failed",
 			Errors:  err.Error(),
 		})
 		return
