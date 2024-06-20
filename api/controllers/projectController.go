@@ -6,8 +6,8 @@ import (
 	"github.com/drTragger/MykroTask/services"
 	"github.com/drTragger/MykroTask/utils"
 	"github.com/google/uuid"
-	"log"
 	"net/http"
+	"strconv"
 )
 
 type ProjectController struct {
@@ -41,7 +41,6 @@ func (pc *ProjectController) CreateProject(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	log.Println(r.Context().Value(middleware.UserIDKey))
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 	project.OwnerId = uuid.MustParse(userID)
 
@@ -74,5 +73,43 @@ func (pc *ProjectController) CreateProject(w http.ResponseWriter, r *http.Reques
 		Status:  true,
 		Message: "Project created successfully.",
 		Data:    project,
+	})
+}
+
+func (pc *ProjectController) GetProjectsForUser(w http.ResponseWriter, r *http.Request) {
+	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
+	var page = 0
+	pageParam := r.URL.Query().Get("page")
+	if pageParam != "" {
+		var err error
+		page, err = strconv.Atoi(pageParam)
+		if err != nil {
+			utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+				Status:  false,
+				Message: "Wrong page param.",
+				Errors:  err.Error(),
+			})
+			return
+		}
+		page--
+		if page < 0 {
+			page = 0
+		}
+	}
+
+	projects, err := pc.projectService.GetProjectsForUser(userId, uint(page))
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Failed to get projects.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
+		Status:  true,
+		Message: "Projects retrieved successfully.",
+		Data:    projects,
 	})
 }
