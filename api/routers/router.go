@@ -24,6 +24,7 @@ func SetupRouter(
 	api.HandleFunc("/projects", projectController.CreateProject).Methods("POST")
 	api.HandleFunc("/projects", projectController.GetProjectsForUser).Methods("GET")
 	api.HandleFunc("/projects/{id}", projectController.GetProjectById).Methods("GET")
+	api.HandleFunc("/projects/{id}", projectController.UpdateProject).Methods("PUT")
 
 	return router
 }

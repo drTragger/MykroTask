@@ -123,7 +123,7 @@ func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
 			Status:  false,
-			Message: "Missing id parameter",
+			Message: "Missing id parameter.",
 		})
 		return
 	}
@@ -132,7 +132,7 @@ func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
 			Status:  false,
-			Message: "Invalid id parameter",
+			Message: "Invalid id parameter.",
 		})
 		return
 	}
@@ -160,6 +160,80 @@ func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Reque
 	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
 		Status:  true,
 		Message: "Project retrieved successfully.",
+		Data:    project,
+	})
+}
+
+func (pc *ProjectController) UpdateProject(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idStr, ok := vars["id"]
+	if !ok {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Missing id parameter.",
+		})
+		return
+	}
+
+	projectId, err := uuid.Parse(idStr)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Invalid id parameter.",
+		})
+		return
+	}
+
+	var project *models.Project
+	errorResponse := utils.UnmarshalRequest(r, &project)
+	if errorResponse != nil {
+		utils.WriteJSONResponse(w, http.StatusBadRequest, errorResponse)
+		return
+	}
+
+	err = utils.ValidateStruct(project)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusUnprocessableEntity, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Validation failed.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	project.ID = projectId
+	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
+
+	permission, err := pc.projectService.CheckUserPermission(projectId, userId)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Permission check failed.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+	if !permission {
+		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
+			Status:  false,
+			Message: "You are not the owner of this project.",
+		})
+		return
+	}
+
+	project, err = pc.projectService.UpdateProject(project)
+	if err != nil {
+		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Failed to update project.",
+			Errors:  err.Error(),
+		})
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
+		Status:  true,
+		Message: "Project updated successfully.",
 		Data:    project,
 	})
 }

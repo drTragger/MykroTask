@@ -10,6 +10,7 @@ type ProjectRepository interface {
 	CreateProject(project *models.Project) (*models.Project, error)
 	GetProjectsForUser(userId uuid.UUID, page uint, perPage uint) ([]*models.Project, error)
 	GetProjectById(projectId uuid.UUID) (*models.Project, error)
+	UpdateProject(project *models.Project) (*models.Project, error)
 }
 
 type projectRepository struct {
@@ -56,6 +57,19 @@ func (r *projectRepository) GetProjectsForUser(userId uuid.UUID, page uint, perP
 func (r *projectRepository) GetProjectById(projectId uuid.UUID) (*models.Project, error) {
 	query := `SELECT * FROM projects WHERE id = $1`
 	row := r.db.QueryRow(query, projectId)
+
+	var p models.Project
+	err := row.Scan(&p.ID, &p.Name, &p.Description, &p.StartDate, &p.EndDate, &p.OwnerId, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *projectRepository) UpdateProject(project *models.Project) (*models.Project, error) {
+	query := `UPDATE projects SET name = $2, description = $3, end_date = $4, updated_at = $5 
+              WHERE id = $1 RETURNING id, name, description, start_date, end_date, owner_id, created_at, updated_at`
+	row := r.db.QueryRow(query, project.ID, project.Name, project.Description, project.EndDate, project.UpdatedAt)
 
 	var p models.Project
 	err := row.Scan(&p.ID, &p.Name, &p.Description, &p.StartDate, &p.EndDate, &p.OwnerId, &p.CreatedAt, &p.UpdatedAt)
