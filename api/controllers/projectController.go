@@ -149,7 +149,7 @@ func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Reque
 
 	utils.WriteJSONResponse(w, http.StatusOK, &utils.SuccessResponse{
 		Status:  true,
-		Message: "Project retrieved successfully.",
+		Message: "Projects retrieved successfully.",
 		Data:    project,
 	})
 }

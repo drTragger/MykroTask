@@ -11,6 +11,7 @@ func SetupRouter(
 	userController *controllers.UserController,
 	projectController *controllers.ProjectController,
 	projectMemberController *controllers.ProjectMemberController,
+	taskController *controllers.TaskController,
 	jwtKey []byte,
 ) *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
@@ -33,6 +34,10 @@ func SetupRouter(
 	api.HandleFunc("/projects/{projectId}/users", projectMemberController.CreateMember).Methods(http.MethodPost)
 	api.HandleFunc("/projects/{projectId}/users", projectMemberController.GetMembers).Methods(http.MethodGet)
 	api.HandleFunc("/projects/{projectId}/users/{userId}", projectMemberController.DeleteMember).Methods(http.MethodDelete)
+
+	// Task Management
+	api.HandleFunc("/projects/{projectId}/tasks", taskController.CreateTask).Methods(http.MethodPost)
+	api.HandleFunc("/projects/{projectId}/tasks", taskController.GetTasksForUser).Methods(http.MethodGet)
 
 	return router
 }

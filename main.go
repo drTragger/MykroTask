@@ -27,19 +27,22 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	projectRepo := repository.NewProjectRepository(db)
 	projectMemberRepo := repository.NewProjectMemberRepository(db)
+	taskRepo := repository.NewTaskRepository(db)
 
 	// Initialize services
 	userService := services.NewUserService(userRepo, jwtKey)
 	projectService := services.NewProjectService(projectRepo, projectMemberRepo, db)
 	projectMemberService := services.NewProjectMemberService(projectMemberRepo)
+	taskService := services.NewTaskService(taskRepo, projectMemberRepo)
 
 	// Initialize controllers
 	userController := controllers.NewUserController(userService)
 	projectController := controllers.NewProjectController(projectService)
 	projectMemberController := controllers.NewProjectMemberController(projectMemberService)
+	taskController := controllers.NewTaskController(taskService)
 
 	// Set up router
-	router := routers.SetupRouter(userController, projectController, projectMemberController, jwtKey)
+	router := routers.SetupRouter(userController, projectController, projectMemberController, taskController, jwtKey)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
