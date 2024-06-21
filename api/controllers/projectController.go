@@ -15,13 +15,11 @@ import (
 
 type ProjectController struct {
 	projectService services.ProjectService
-	userService    services.UserService
 }
 
-func NewProjectController(projectService services.ProjectService, userService services.UserService) *ProjectController {
+func NewProjectController(projectService services.ProjectService) *ProjectController {
 	return &ProjectController{
 		projectService: projectService,
-		userService:    userService,
 	}
 }
 
@@ -44,27 +42,10 @@ func (pc *ProjectController) CreateProject(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userID := r.Context().Value(middleware.UserIDKey).(string)
-	project.OwnerId = uuid.MustParse(userID)
+	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
+	project.OwnerId = userId
 
-	user, err := pc.userService.GetUserById(project.OwnerId)
-	if err != nil {
-		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
-			Status:  false,
-			Message: "Failed to get user.",
-			Errors:  err.Error(),
-		})
-		return
-	}
-	if user == nil {
-		utils.WriteJSONResponse(w, http.StatusUnprocessableEntity, &utils.ErrorResponse{
-			Status:  false,
-			Message: "User not found.",
-		})
-		return
-	}
-
-	project, err = pc.projectService.CreateProject(project)
+	project, err = pc.projectService.CreateProject(project, userId)
 	if err != nil {
 		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
 			Status:  false,
@@ -141,7 +122,7 @@ func (pc *ProjectController) GetProjectById(w http.ResponseWriter, r *http.Reque
 
 	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
 
-	project, err := pc.projectService.GetProjectById(projectId)
+	project, err := pc.projectService.GetProjectById(projectId, userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			utils.WriteJSONResponse(w, http.StatusNotFound, &utils.ErrorResponse{
@@ -213,29 +194,19 @@ func (pc *ProjectController) UpdateProject(w http.ResponseWriter, r *http.Reques
 	project.ID = projectId
 	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
 
-	permission, err := pc.projectService.CheckUserPermission(projectId, userId)
-	if err != nil {
-		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
-			Status:  false,
-			Message: "Permission check failed.",
-			Errors:  err.Error(),
-		})
-		return
-	}
-	if !permission {
-		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
-			Status:  false,
-			Message: "You are not the owner of this project.",
-		})
-		return
-	}
-
-	project, err = pc.projectService.UpdateProject(project)
+	project, forbidden, err := pc.projectService.UpdateProject(project, userId)
 	if err != nil {
 		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
 			Status:  false,
 			Message: "Failed to update project.",
 			Errors:  err.Error(),
+		})
+		return
+	}
+	if forbidden {
+		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
+			Status:  false,
+			Message: "You are not the owner of this project.",
 		})
 		return
 	}
@@ -269,29 +240,20 @@ func (pc *ProjectController) DeleteProject(w http.ResponseWriter, r *http.Reques
 	}
 
 	userId := uuid.MustParse(r.Context().Value(middleware.UserIDKey).(string))
-	permission, err := pc.projectService.CheckUserPermission(projectId, userId)
-	if err != nil {
-		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
-			Status:  false,
-			Message: "Permission check failed.",
-			Errors:  err.Error(),
-		})
-		return
-	}
-	if !permission {
-		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
-			Status:  false,
-			Message: "You are not the owner of this project.",
-		})
-		return
-	}
 
-	err = pc.projectService.DeleteProject(projectId)
+	forbidden, err := pc.projectService.DeleteProject(projectId, userId)
 	if err != nil {
 		utils.WriteJSONResponse(w, http.StatusInternalServerError, &utils.ErrorResponse{
 			Status:  false,
 			Message: "Failed to delete project.",
 			Errors:  err.Error(),
+		})
+		return
+	}
+	if forbidden {
+		utils.WriteJSONResponse(w, http.StatusForbidden, &utils.ErrorResponse{
+			Status:  false,
+			Message: "You are not the owner of this project.",
 		})
 		return
 	}
