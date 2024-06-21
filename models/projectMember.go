@@ -36,3 +36,7 @@ type ProjectMember struct {
 func (pm *ProjectMember) CanEditProject() bool {
 	return pm.Role == RoleAdmin || pm.Role == RoleOwner
 }
+
+func (pm *ProjectMember) CanDeleteProject() bool {
+	return pm.Role == RoleOwner
+}

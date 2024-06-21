@@ -99,7 +99,7 @@ func (s *projectService) DeleteProject(projectId, memberId uuid.UUID) (bool, err
 		return false, err
 	}
 
-	if !member.CanEditProject() {
+	if !member.CanDeleteProject() {
 		return true, nil
 	}
 
