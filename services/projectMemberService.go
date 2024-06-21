@@ -50,7 +50,7 @@ func (s *projectMemberService) DeleteMember(projectId, memberId, userId uuid.UUI
 		return false, err
 	}
 
-	if !member.CanEditProject() || memberId == userId {
+	if !member.CanEditProject() || member.Role == models.RoleOwner {
 		return true, nil
 	}
 
