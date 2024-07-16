@@ -4,6 +4,7 @@ import (
 	"github.com/drTragger/MykroTask/api/controllers"
 	"github.com/drTragger/MykroTask/middleware"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"net/http"
 )
 
@@ -13,10 +14,17 @@ func SetupRouter(
 	projectMemberController *controllers.ProjectMemberController,
 	taskController *controllers.TaskController,
 	jwtKey []byte,
-) *mux.Router {
+) http.Handler {
 	router := mux.NewRouter().StrictSlash(true)
 	api := router.PathPrefix("/api").Subrouter()
 	api.Use(middleware.JWTMiddleware(jwtKey))
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"}, // Replace with your front-end URL
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+	})
+	handler := c.Handler(router)
 
 	// User Management
 	router.HandleFunc("/api/register", userController.RegisterUser).Methods(http.MethodPost)
@@ -37,7 +45,11 @@ func SetupRouter(
 
 	// Task Management
 	api.HandleFunc("/projects/{projectId}/tasks", taskController.CreateTask).Methods(http.MethodPost)
-	api.HandleFunc("/projects/{projectId}/tasks", taskController.GetTasksForUser).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{projectId}/users/{memberId}/tasks", taskController.GetTasksForUser).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{projectId}/tasks/{taskId}", taskController.GetTaskById).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{projectId}/tasks/{taskId}", taskController.DeleteTask).Methods(http.MethodDelete)
+	api.HandleFunc("/projects/{projectId}/tasks", taskController.GetTasksForProject).Methods(http.MethodGet)
+	api.HandleFunc("/projects/{projectId}/tasks/{taskId}", taskController.UpdateTask).Methods(http.MethodPut)
 
-	return router
+	return handler
 }

@@ -15,9 +15,10 @@ type User struct {
 }
 
 type CreateUserDTO struct {
-	Name     string `json:"name" validate:"required,min=2,max=100"`
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8,max=32"`
+	Name            string `json:"name" validate:"required,min=2,max=100"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required,min=8,max=32"`
+	ConfirmPassword string `json:"confirmPassword" validate:"required,min=8,max=32"`
 }
 
 type LoginDTO struct {

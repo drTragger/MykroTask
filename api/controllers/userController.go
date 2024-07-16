@@ -44,6 +44,14 @@ func (uc *UserController) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if userDTO.Password != userDTO.ConfirmPassword {
+		utils.WriteJSONResponse(w, http.StatusUnprocessableEntity, &utils.ErrorResponse{
+			Status:  false,
+			Message: "Passwords do not match.",
+		})
+		return
+	}
+
 	existingUser, err := uc.userService.GetUserByEmail(userDTO.Email)
 	if err == nil && existingUser != nil {
 		utils.WriteJSONResponse(w, http.StatusBadRequest, &utils.ErrorResponse{
